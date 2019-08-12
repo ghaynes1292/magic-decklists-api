@@ -1,7 +1,8 @@
 const config = require("config");
 const mongoose = require("mongoose");
 const usersRoute = require("./routes/User");
-const decklistRoute = require("./routes/Decklist");
+const decklistRoutes = require("./routes/Decklist");
+const eventRoutes = require("./routes/Event");
 const express = require("express");
 const app = express();
 
@@ -22,7 +23,8 @@ mongoose
 app.use(express.json());
 //use users route for api/users
 app.use("/api/users", usersRoute);
-app.use("/api/decklist", decklistRoute);
+app.use("/api/decklists", decklistRoutes);
+app.use("/api/events", eventRoutes);
 
 const port = process.env.PORT || 8000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
