@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const mongoose = require('mongoose');
 
-//simple schema
 const EventSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -11,17 +10,33 @@ const EventSchema = new mongoose.Schema({
     minlength: 3,
     maxlength: 50
   },
-  id: {
+  date: {
+    type: Date,
+    required: true,
+  },
+  link: {
     type: String,
     required: true,
-    minlength: 5,
-    maxlength: 255,
-    unique: true
+    minlength: 3,
+    maxlength: 100,
+    unique: true,
   },
+  format: {
+    type: String,
+    required: true,
+  },
+  stars: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 5,
+  },
+  players: {
+    type: Number,
+  },
+  decks: [Number],
 });
 
-
 const Event = mongoose.model('Event', EventSchema);
-
 
 exports.Event = Event;

@@ -8,102 +8,104 @@ req = req.defaults({
   encoding: null
 });
 
-var fetchDeck = (eventId, deckId, callback) => {
-  req('http://mtgtop8.com/event?e=' + eventId + '&d=' + deckId, function (err, res) {
-    if (err) return callback(err);
+var fetchDeck = async (eventId, deckId) => {
+  return new Promise((resolve, reject) => {
+    return req('http://mtgtop8.com/event?e=' + eventId + '&d=' + deckId, function (err, res) {
+      if (err) return reject(err);
 
-    var $ = cheerio.load(iconv.decode(res.body, 'latin-1'));
-    var result = {
-      player: $('table .chosen_tr [align=right] .topic').text().trim(),
-      result: $('table .chosen_tr [align=center]').text().trim(),
-      cards: [],
-      sideboard: []
-    };
+      var $ = cheerio.load(iconv.decode(res.body, 'latin-1'));
+      var result = {
+        player: $('table .chosen_tr [align=right] .topic').text().trim(),
+        result: $('table .chosen_tr [align=center]').text().trim(),
+        cards: [],
+        sideboard: []
+      };
 
-    var addCards = function (arr) {
-      return function (i, card) {
-        var parent = $(card).parent();
-        $(card).remove();
+      var addCards = function (arr) {
+        return function (i, card) {
+          var parent = $(card).parent();
+          $(card).remove();
 
-        var name = $(card).text().trim();
-        var count = parseInt($(parent).text().trim());
-        arr.push({
-          count: count,
-          name: name
-        });
-      }
-    };
+          var name = $(card).text().trim();
+          var count = parseInt($(parent).text().trim());
+          arr.push({
+            count: count,
+            name: name
+          });
+        }
+      };
 
-    var tables = $('table table table');
-    $('tr td div span', tables.last()).each(addCards(result.sideboard));
-    tables.slice(0, -1).each(function (i, table) {
-      $('tr td div span', table).each(addCards(result.cards));
+      var tables = $('table table table');
+      $('tr td div span', tables.last()).each(addCards(result.sideboard));
+      tables.slice(0, -1).each(function (i, table) {
+        $('tr td div span', table).each(addCards(result.cards));
+      });
+
+      // An check to make sure that it's being noticed if a deck is empty. Not too sure that the method above is always working for older data.
+      if (!result.cards.length) console.log('[mtgtop8] It appears that this deck is empty, should be investigated. .event(' + eventId + ',' + deckId + ')');
+
+      resolve(result)
     });
-
-    // An check to make sure that it's being noticed if a deck is empty. Not too sure that the method above is always working for older data.
-    if (!result.cards.length) console.log('[mtgtop8] It appears that this deck is empty, should be investigated. .event(' + eventId + ',' + deckId + ')');
-
-    callback(null, result);
-  });
+  })
 };
 
-var fetchEventInfo = (eventId, callback) => {
+var fetchEventInfo = async (eventId) => {
   console.log('fetching event info id:', eventId)
-  req('http://mtgtop8.com/event?e=' + eventId, function (err, res) {
-    if (err) return callback(err);
+  return new Promise((resolve, reject) => {
+    req('http://mtgtop8.com/event?e=' + eventId, async (err, res) => {
+      if (err) return reject(err);
 
-    var $ = cheerio.load(iconv.decode(res.body, 'latin-1'));
+      var $ = cheerio.load(iconv.decode(res.body, 'latin-1'));
 
-    var players;
-    var date;
-    var data = lodash.get($('table div table td[align=center] div'), '[1].prev.data', '').trim();
-    var playersRE = /^(\d*) players/;
-    var dateRE = /(\d\d\/\d\d\/\d\d)$/;
-    if (data.match(playersRE)) players = parseInt(data.match(playersRE)[1]);
-    if (data.match(dateRE)) date = data.match(dateRE)[1];
+      var players;
+      var date;
+      var data = lodash.get($('table div table td[align=center] div'), '[1].prev.data', '').trim();
+      var playersRE = /^(\d*) players/;
+      var dateRE = /(\d\d\/\d\d\/\d\d)$/;
+      if (data.match(playersRE)) players = parseInt(data.match(playersRE)[1]);
+      if (data.match(dateRE)) date = data.match(dateRE)[1];
 
-    var result = {
-      title: $('.w_title td').first().text(),
-      format: $('table div table td[align=center] div')[0].prev.data.trim(),
-      stars: $('table div table td[align=center] div img[src="graph/star.png"]').length,
-      bigstars: $('table div table td[align=center] div img[src="graph/bigstar.png"]').length,
-      players: players,
-      date: moment(date, 'DD/MM/YY').toDate(),
-      decks: []
-    };
-    $('table td[width="25%"] > div > div:not([align="center"])').each(function (i, div) {
-      var link = $($('div div a', div)[0]).attr('href');
-
-      result.decks.push({
-        result: $('div div[align=center]', div).text().trim(),
-        title: $($('div div a', div)[0]).text().trim(),
-        player: $($('div div a', div)[1]).text().trim(),
-        id: parseInt(link.match(/\&d\=(\d*)/)[1])
+      var result = {
+        title: $('.w_title td').first().text(),
+        format: $('table div table td[align=center] div')[0].prev.data.trim(),
+        stars: $('table div table td[align=center] div img[src="graph/star.png"]').length,
+        bigStars: $('table div table td[align=center] div img[src="graph/bigstar.png"]').length,
+        players: players,
+        date: moment(date, 'DD/MM/YY').toDate(),
+        id: eventId,
+        decks: []
+      };
+      var deckPromises = [];
+      $('table td[width="25%"] > div > div:not([align="center"])').each((i, div) => {
+        var link = $($('div div a', div)[0]).attr('href');
+        deckPromises.push(
+          fetchDeck(eventId, parseInt(link.match(/\&d\=(\d*)/)[1]))
+          .then((deck) => ({
+            result: $('div div[align=center]', div).text().trim(),
+            title: $($('div div a', div)[0]).text().trim(),
+            player: $($('div div a', div)[1]).text().trim(),
+            id: parseInt(link.match(/\&d\=(\d*)/)[1]),
+            maindeck: deck.cards,
+            sideboard: deck.sideboard
+          }))
+        );
       });
+      const decks = await Promise.all(deckPromises);
+      console.log('decks', decks)
+      resolve({
+        ...result,
+        decks
+      })
     });
-
-    result.players = result.players || result.decks.length;
-
-    callback(null, result);
-  });
+  })
 };
 
 var fetchEvent = (eventId) => {
   console.log('fetching event id:', eventId)
   return new Promise((resolve, reject) => {
-    fetchEventInfo(eventId, (err, event) => {
-      if (err) return reject(error);
-
-      console.log('event', event)
-      resolve(event)
-      // fetchDeck(eventId, deck.id, (err, deckFull) => {
-      //   if (err) return reject(error);
-
-      //   deck.cards = deckFull.cards;
-      //   deck.sideboard = deckFull.sideboard;
-      //   decksFull.push(deck);
-      // });
-    });
+    fetchEventInfo(eventId)
+    .then(event => resolve(event))
+    .catch(err => reject(err))
   })
 };
 
