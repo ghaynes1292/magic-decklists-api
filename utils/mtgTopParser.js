@@ -135,7 +135,6 @@ var fetchCompetetiveDecksLegacy = (page = 1) => {
         const deckName = $('td[class=S11] a', div).text();
         const deckLink = $('td[class=S11] a', div).attr('href');
         const playerName = $('td[class=G11] a', div).text();
-        const playerName = $('td[class=G11] a', div).text();
         const stars = $('td[class=O16] img[src="graph/star.png"]', div).length;
         const eventId = parseInt(deckLink.match(/e\=(\d*)/)[1]);
         const deckId = parseInt(deckLink.match(/d\=(\d*)/)[1]);

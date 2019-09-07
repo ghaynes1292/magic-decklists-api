@@ -23,7 +23,7 @@ mongoose
 app.use(express.json());
 //use users route for api/users
 app.use("/api/users", usersRoute);
-app.use("/api/decklists", decklistRoutes);
+app.use("/api/decklist", decklistRoutes);
 app.use("/api/events", eventRoutes);
 
 const port = process.env.PORT || 8000;

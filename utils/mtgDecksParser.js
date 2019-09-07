@@ -3,6 +3,7 @@ var cheerio = require('cheerio');
 var moment = require('moment');
 var iconv = require('iconv-lite');
 const lodash = require('lodash');
+const { Event } = require("../models/Event");
 
 req = req.defaults({
   encoding: null
@@ -52,7 +53,7 @@ var fetchDeck = async (deckLink, eventLink) => {
         format,
         format_link,
         name,
-        link,
+        archetype_link: link,
         eventLink,
         player_name,
         player_link,
@@ -63,7 +64,8 @@ var fetchDeck = async (deckLink, eventLink) => {
 
 var fetchEventDecks = async (eventLink) => {
   return new Promise((resolve, reject) => {
-    console.log('fetching decks for: ', eventLink)
+    console.log('fetching decks for: ', eventLink);
+
     return req(`https://mtgdecks.net${eventLink}`, (err, res) => {
       if (err) return reject(err);
 
@@ -106,20 +108,25 @@ var fetchEvents = async (format, page) => {
         if (i == 0) return null;
         const date = moment($('strong', $('td', div)[0]).text(), 'DD-MMM').toDate();
         const name = $('a', $('td', div)[1]).text();
-        const link = $('a', $('td', div)[1]).attr('href');;
-        const players = lodash.parseInt($($('td', div)[2]).text().trim().replace(' Players'));
+        const link = $('a', $('td', div)[1]).attr('href');
+        const players = lodash.defaultTo(lodash.parseInt($($('td', div)[2]).text().trim().replace(' Players')), -1);
         const stars = $('div', $('td', div)[3]).children('.glyphicon-star').length;
         const event = { date, name, link, players, format, stars };
         eventCount = eventCount + 1;
         fetchedEvents.push(event)
       });
-      console.log('event count', eventCount)
-      Promise.all(fetchedEvents.map((event) =>
-        fetchEventDecks(event.link).then(decks => ({
+      console.log('event count', eventCount);
+      Promise.all(fetchedEvents.map(async (event) => {
+        // Find event here and fetch if not found
+        let eventExists = await Event.findOne({ link: event.link });
+        if (eventExists) return false;
+    
+        return fetchEventDecks(event.link)
+        .then(decks => ({
           ...event,
           decks
         }))
-      ))
+      }))
       .then(events => resolve(events))
     });
   })

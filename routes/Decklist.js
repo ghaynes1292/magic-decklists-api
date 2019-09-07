@@ -26,40 +26,9 @@ const findCommonCards = (userDecklist, topDecklists) => {
   return lodash.compact(commonDecks);
 }
 
-router.post("/", async (req, res) => {
+router.post("/convert", async (req, res) => {
   const convertedDecklist = lodash.compact(convertRequestToDecklist(req.body));
-  mtg.legacyEvents(function (err, events) {
-    const allEvents = lodash.slice(events, 0, 2).map((event) => {
-      return new Promise((resolve, reject) => {
-        mtg.event(event.id, function (err, eventData) {
-          resolve(eventData.decks);
-        })
-      });
-    })
-    Promise.all(allEvents).then((response) => {
-      const commonDecks = findCommonCards(convertedDecklist, lodash.flatten(response));
-      res.json(commonDecks)
-    })
-  });
-});
-
-// router.get("/recent", async (req, res) => {
-  
-// });
-
-router.put("/legacy", async (req, res) => {
-  mtg.legacyEvents(function (err, events) {
-    const allEvents = lodash.map((event) => {
-      return new Promise((resolve, reject) => {
-        mtg.event(event.id, function (err, eventData) {
-          resolve(eventData.decks);
-        })
-      });
-    })
-    Promise.all(allEvents).then((response) => {
-      res.json(response)
-    })
-  });
+  res.json(convertedDecklist);
 });
 
 module.exports = router;

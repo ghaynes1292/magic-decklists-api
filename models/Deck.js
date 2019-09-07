@@ -15,19 +15,20 @@ const DeckSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  archetype_link: {
+    type: String,
+  },
   player_name: {
     type: String,
-    required: true,
   },
   player_link: {
     type: String,
-    required: true,
   },
   ranking: {
     type: String,
     required: true,
     minlength: 1,
-    maxlength: 6
+    maxlength: 15
   },
   format: {
     type: String,
@@ -37,8 +38,14 @@ const DeckSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  maindeck: [Number],
-  sideboard: [Number],
+  maindeck: [{
+    count: Number,
+    name: String,
+  }],
+  sideboard: [{
+    count: Number,
+    name: String,
+  }],
 });
 
 const Deck = mongoose.model('Deck', DeckSchema);

@@ -8,7 +8,7 @@ const EventSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 3,
-    maxlength: 50
+    maxlength: 200
   },
   date: {
     type: Date,
@@ -34,7 +34,7 @@ const EventSchema = new mongoose.Schema({
   players: {
     type: Number,
   },
-  decks: [Number],
+  decks: [String],
 });
 
 const Event = mongoose.model('Event', EventSchema);
