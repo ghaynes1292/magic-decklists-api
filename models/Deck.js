@@ -1,6 +1,5 @@
 const config = require('config');
-const jwt = require('jsonwebtoken');
-const Joi = require('joi');
+const lodash = require('lodash');
 const mongoose = require('mongoose');
 
 const DeckSchema = new mongoose.Schema({
@@ -46,8 +45,66 @@ const DeckSchema = new mongoose.Schema({
     count: Number,
     name: String,
   }],
+  event: {
+    type: String,
+    required: true,
+  },
 });
 
 const Deck = mongoose.model('Deck', DeckSchema);
 
+const fullDeckList = (deck) => {
+  const decklist = lodash.reduce(deck, function(result, value) {
+    const { name, count } = value;
+    if (result[name]) {
+      result[name] = result[name] + count;
+    } else {
+      result[name] = count;
+    }
+    return result;
+  }, {});
+
+  return lodash.map(decklist, (value, key) => ({
+    count: value,
+    name: key
+  }));
+};
+
+
+const findCommonCards = (userDeck, savedDeck) => {
+  const userFullDeck = fullDeckList(userDeck);
+  const savedFullDeck = fullDeckList([...savedDeck.maindeck, ...savedDeck.sideboard]);
+  const differenceList = userFullDeck.map(card => {
+    const savedDeckCard = lodash.find(savedFullDeck, ['name', card.name])
+    if (savedDeckCard) {
+      return {
+        name: card.name,
+        count: Math.abs(card.count - savedDeckCard.count)
+      }
+    }
+    return card;
+  });
+  
+  const difference = lodash.reduce(differenceList, function(sum, n) {
+    return sum + n.count;
+  }, 0);
+
+  return {
+    difference,
+    link: savedDeck.link,
+    ranking: savedDeck.ranking,
+    event: savedDeck.event,
+    list: differenceList
+  }
+};
+
+const findCommon = async (cards) => {
+  const matchingDecks = await Deck.find({ maindeck: { $elemMatch: { name: { $in: cards.map(card => card.name) } } } });
+
+  return matchingDecks.map(deck => findCommonCards(cards, deck))
+};
+
+
+
 exports.Deck = Deck;
+exports.findCommonDecks = findCommon;

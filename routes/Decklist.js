@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const lodash = require('lodash');
-const mtg = require('../utils/mtgTopParser');
 
-const regex = /[,' -]/gi;
+const scryfall = require('../utils/scryfall');
+const { findCommonDecks } = require("../models/Deck");
 
 const convertRequestToDecklist = (body) => {
   return body.map((line) => {
@@ -16,19 +16,29 @@ const convertRequestToDecklist = (body) => {
   })
 };
 
-const findCommonCards = (userDecklist, topDecklists) => {
-  console.log(`mapping through ${topDecklists.length} decks`);
-  const commonDecks = topDecklists.map((deck) => {
-    const diff = lodash.differenceBy(deck.cards, userDecklist, ({ name }) => name.replace(regex, ''));
-    console.log (`Deck: ${deck.title}, Diff: ${diff.length}`);
-    return diff.length < 10 && { ...deck, difference: diff.length, diffCards: diff }
-  })
-  return lodash.compact(commonDecks);
-}
-
 router.post("/convert", async (req, res) => {
   const convertedDecklist = lodash.compact(convertRequestToDecklist(req.body));
+
   res.json(convertedDecklist);
+});
+
+router.post("/match", async (req, res) => {
+  const convertedDecklist = lodash.compact(convertRequestToDecklist(req.body));
+  const commonDecks = await findCommonDecks(convertedDecklist);
+  const slicedDecks = lodash.orderBy(commonDecks, ['difference'], ['asc']).slice(0, 15);
+  const totalCards = lodash.uniq(lodash.flatten(slicedDecks.map(deck => deck.list.map(card => card.name))));
+  const cardsWithInfo = await scryfall.fetchCardsInfo(totalCards);
+  const slicedDecksWithCardInfo = slicedDecks.map(deck => {
+    return {
+      ...deck,
+      list: deck.list.map(card => ({
+        ...card,
+        ...lodash.find(cardsWithInfo, ['name', card.name])
+      }))
+    };
+  })
+
+  res.json(slicedDecksWithCardInfo);
 });
 
 module.exports = router;

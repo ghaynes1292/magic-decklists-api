@@ -36,6 +36,7 @@ router.put("/decks/legacy", async (req, res) => {
         format_link: deck.format_link,
         maindeck: deck.maindeck,
         sideboard: deck.sideboard,
+        event: event.link,
       });
       return tempDeck.save();
     });
@@ -43,15 +44,6 @@ router.put("/decks/legacy", async (req, res) => {
   })));
   console.log('new decks: ', newDecks.length);
 
-  // const events = sampleJson;
-  // const totalCards = lodash.flatten(events.map(event => {
-  //   return lodash.flatten(event.decks.map(deck => {
-  //     const mdCards = deck.maindeck.map(card => card.name);
-  //     const sbCards = deck.sideboard.map(card => card.name);
-  //     return [...mdCards, ...sbCards];
-  //   }))
-  // }));
-  // const cardsInfo = await scryfall.fetchCardsInfo(totalCards);
   res.json({
     events: newEvents.map(event => event.link),
     decks: newDecks.map(deck => deck.link)

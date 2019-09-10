@@ -34,7 +34,6 @@ const EventSchema = new mongoose.Schema({
   players: {
     type: Number,
   },
-  decks: [String],
 });
 
 const Event = mongoose.model('Event', EventSchema);
