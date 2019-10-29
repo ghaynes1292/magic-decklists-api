@@ -7,7 +7,6 @@ const DeckSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 3,
-    maxlength: 50
   },
   link: {
     type: String,
@@ -103,8 +102,6 @@ const findCommon = async (cards) => {
 
   return matchingDecks.map(deck => findCommonCards(cards, deck))
 };
-
-
 
 exports.Deck = Deck;
 exports.findCommonDecks = findCommon;

@@ -2,6 +2,7 @@ const config = require("config");
 const mongoose = require("mongoose");
 const usersRoute = require("./routes/User");
 const decklistRoutes = require("./routes/Decklist");
+const decksRoutes = require("./routes/Decks");
 const eventRoutes = require("./routes/Event");
 const express = require("express");
 const app = express();
@@ -24,6 +25,7 @@ app.use(express.json());
 //use users route for api/users
 app.use("/api/users", usersRoute);
 app.use("/api/decklist", decklistRoutes);
+app.use("/api/decks", decksRoutes);
 app.use("/api/events", eventRoutes);
 
 const port = process.env.PORT || 8000;

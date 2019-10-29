@@ -3,7 +3,7 @@ const router = express.Router();
 const lodash = require('lodash');
 
 const scryfall = require('../utils/scryfall');
-const { findCommonDecks } = require("../models/Deck");
+const { Deck, findCommonDecks } = require("../models/Deck");
 
 const convertRequestToDecklist = (body) => {
   return body.map((line) => {
@@ -39,6 +39,12 @@ router.post("/match", async (req, res) => {
   })
 
   res.json(slicedDecksWithCardInfo);
+});
+
+router.get("/", async (req, res) => {
+  const { link } = req.query;
+  const deck = await Deck.findOne({ link });
+  res.json(deck);
 });
 
 module.exports = router;

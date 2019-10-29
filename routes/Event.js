@@ -3,12 +3,10 @@ const router = express.Router();
 const lodash = require('lodash');
 var moment = require('moment');
 const mtgDecks = require('../utils/mtgDecksParser');
-const scryfall = require('../utils/scryfall');
-const sampleJson = require('./sampleParse');
 const { Event } = require("../models/Event");
 const { Deck } = require("../models/Deck");
 
-router.put("/decks/legacy", async (req, res) => {
+router.put("/legacy", async (req, res) => {
   const events = await mtgDecks.fetchEvents('Legacy');
   const newEvents = await Promise.all(lodash.compact(events).map(event => {
     const tempEvent = new Event({
@@ -48,6 +46,12 @@ router.put("/decks/legacy", async (req, res) => {
     events: newEvents.map(event => event.link),
     decks: newDecks.map(deck => deck.link)
   });
+});
+
+router.get("/legacy", async (req, res) => {
+  const { playerMin = -1, mtgo = true } = req.query;
+  const events = await Event.find({ $or: [ { players: { $eq: mtgo ? -1 : playerMin } }, { players: { $gte: playerMin } } ] });
+  res.json(events);
 });
 
 module.exports = router;
