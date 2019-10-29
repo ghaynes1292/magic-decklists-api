@@ -21,26 +21,29 @@ router.put("/legacy", async (req, res) => {
     return tempEvent.save();
   }));
   console.log('new events: ', newEvents.length);
-  const newDecks = await Promise.all(lodash.flatten(events.map(event => {
-    const eventDecks = event.decks.map(deck => {
-      const tempDeck = new Deck({
-        name: deck.name,
-        link: deck.link,
-        archetype_link: deck.archetype_link,
-        player_name: deck.player_name,
-        player_link: deck.player_link,
-        ranking: deck.ranking,
-        format: deck.format,
-        format_link: deck.format_link,
-        maindeck: deck.maindeck,
-        sideboard: deck.sideboard,
-        event: event.link,
+  let newDecks = [];
+  if (newEvents.length) {
+    newDecks = await Promise.all(lodash.flatten(events.map(event => {
+      const eventDecks = event.decks.map(deck => {
+        const tempDeck = new Deck({
+          name: deck.name,
+          link: deck.link,
+          archetype_link: deck.archetype_link,
+          player_name: deck.player_name,
+          player_link: deck.player_link,
+          ranking: deck.ranking,
+          format: deck.format,
+          format_link: deck.format_link,
+          maindeck: deck.maindeck,
+          sideboard: deck.sideboard,
+          event: event.link,
+        });
+        return tempDeck.save();
       });
-      return tempDeck.save();
-    });
-    return eventDecks;
-  })));
-  console.log('new decks: ', newDecks.length);
+      return eventDecks;
+    })));
+    console.log('new decks: ', newDecks.length);
+  }
 
   res.json({
     events: newEvents.map(event => event.link),
