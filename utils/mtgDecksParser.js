@@ -86,8 +86,16 @@ var fetchEventDecks = async (eventLink) => {
       });
       console.log('deck count', deckCount)
       Promise.all(
-        decks.map(deck => fetchDeck(deck.link, eventLink).then(fetchedDeck => ({ ...deck, ...fetchedDeck })))
+        decks.map(deck => fetchDeck(deck.link, eventLink)
+          .then(fetchedDeck => ({ ...deck, ...fetchedDeck }))
+          .catch(e => {
+            console.log(`error fetching deck: ${deck.link}`, e)
+          })
+        )
       ).then(decks => resolve(decks))
+      .catch(e => {
+        console.log(`error fetching event: ${eventLink} `, e)
+      })
     });
   })
 };
