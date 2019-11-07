@@ -4,6 +4,7 @@ const usersRoute = require("./routes/User");
 const decklistRoutes = require("./routes/Decklist");
 const decksRoutes = require("./routes/Decks");
 const eventRoutes = require("./routes/Event");
+const matchRoutes = require("./routes/Match");
 const express = require("express");
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/users", usersRoute);
 app.use("/api/decklist", decklistRoutes);
 app.use("/api/decks", decksRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/match", matchRoutes);
 
 const port = process.env.PORT || 8000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));

@@ -70,26 +70,20 @@ const fullDeckList = (deck) => {
 };
 
 
-const findCommonCards = (userDeck, savedDeck) => {
+const findCommonCards = (userDeck, savedDeck, differenceFunction) => {
   const userFullDeck = fullDeckList(userDeck);
   const savedFullDeck = fullDeckList([...savedDeck.maindeck, ...savedDeck.sideboard]);
-  const differenceList = userFullDeck.map(card => {
-    const savedDeckCard = lodash.find(savedFullDeck, ['name', card.name])
-    if (savedDeckCard) {
-      return {
-        name: card.name,
-        count: Math.abs(card.count - savedDeckCard.count)
-      }
+  const differenceList = savedFullDeck.map(card => {
+    const userDeckCard = lodash.find(userFullDeck, ['name', card.name])
+    const userCardCount = userDeckCard ? userDeckCard.count : 0
+    return {
+      name: card.name,
+      count: card.count - userCardCount, // Do this order because, if you need more = positive
     }
-    return card;
   });
-  
-  const difference = lodash.reduce(differenceList, function(sum, n) {
-    return sum + n.count;
-  }, 0);
 
   return {
-    difference,
+    difference: differenceFunction(differenceList),
     link: savedDeck.link,
     ranking: savedDeck.ranking,
     event: savedDeck.event,
@@ -97,11 +91,20 @@ const findCommonCards = (userDeck, savedDeck) => {
   }
 };
 
-const findCommon = async (cards) => {
+const findCommon = (differenceFunction) => async (cards) => {
   const matchingDecks = await Deck.find({ maindeck: { $elemMatch: { name: { $in: cards.map(card => card.name) } } } });
 
-  return matchingDecks.map(deck => findCommonCards(cards, deck))
+  return lodash.orderBy(matchingDecks.map(deck => findCommonCards(cards, deck, differenceFunction)), 'difference', 'asc')
 };
 
+const differenceAbs = (differenceList) => lodash.reduce(differenceList, function(sum, n) {
+  return sum + Math.abs(n.count);
+}, 0);
+
+const differenceMax = (differenceList) => lodash.reduce(differenceList, function(sum, n) {
+  return sum + Math.max(n.count, 0);
+}, 0);
+
 exports.Deck = Deck;
-exports.findCommonDecks = findCommon;
+exports.findCommonDecksFromDeck = findCommon(differenceAbs);
+exports.findCommonDecksFromCollection = findCommon(differenceMax);

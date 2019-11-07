@@ -28,7 +28,7 @@ const fetchCardsInfo = (totalCards) => {
       image_uris: card.image_uris
     })))));
 
-    console.log('num cards: ', cards.length)
+    console.log('scryfall fetched cards length: ', cards.length)
     return cards
   })
 };
